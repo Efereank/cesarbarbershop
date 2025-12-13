@@ -1,0 +1,90 @@
+@use "base/variables" as v;
+@use "base/mixins" as m;
+
+
+
+// En tu archivo SCSS
+.alerta-notificacion {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: v.$negro;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-left: 4px solid v.$verdeClaro;
+    z-index: 10000;
+    max-width: 350px;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    animation: slideIn 0.3s ease;
+    
+
+
+
+    .contenido-notificacion {
+        flex: 1;
+        
+        strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: v.$blanco;
+        }
+        
+        p {
+            margin: 0 0 0.5rem 0;
+            color: v.$blanco;
+        }
+        
+        small {
+            color: v.$blanco;
+            font-size: 1rem;
+        }
+    }
+
+    .recargar-pagina {
+    background-color: v.$verdeClaro;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+    
+    .cerrar-notificacion {
+        background-color: v.$verdeClaro;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: v.$blanco;
+        padding: 0;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        &:hover {
+            background: rgba(0,0,0,0.1);
+        }
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#estado-websocket {
+    font-family: monospace;
+    font-size: 1.2rem;
+}
