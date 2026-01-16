@@ -62,9 +62,9 @@
 
     .panel-p{
         color: v.$negro;
-        font-size: 2.2rem;
+        font-size: 2.1rem;
         font-weight: 700;
-        padding: 1rem;
+        
     }
 }
 
@@ -104,4 +104,8 @@
     @include m.tablet {
         display: block;
     }
+}
+
+svg{
+margin-top: 1rem;
 }
