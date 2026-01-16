@@ -146,7 +146,7 @@
 
     async function consultarAPI() {
         try {
-            const url = 'http://localhost:3000/api/servicios';
+            const url = '/api/servicios';
             const resultado = await fetch(url);
             
             if (!resultado.ok) {
@@ -866,7 +866,7 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
 
         try {
             // Obtener la tasa de la API
-            const url = 'http://localhost:3000/api/tasa';
+            const url = '/api/tasa';
             const resultadoTasa = await fetch(url);
             const tasas = await resultadoTasa.json();
             
@@ -1029,7 +1029,7 @@ async function reservarCita() {
     datos.append('barberoId', barberoId); 
 
     try {
-        const url = 'http://localhost:3000/api/citas';
+        const url = '/api/citas';
         const respuesta = await fetch(url, {
             method: 'POST',
             body: datos
@@ -1066,7 +1066,7 @@ async function reservarCita() {
 async function notificarBarberoWebSocket(barberoId, fecha, hora, servicios) {
     try {
         
-        const respuesta = await fetch('http://localhost:3001/notificar-barbero', {
+        const respuesta = await fetch('/notificar-barbero', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -108,10 +108,10 @@ export function dev() {
 // TAREAS ACTUALIZADAS:
 
 // ✅ Build normal (sin watch) - para npm run build
-export const build = series(js, css, imagenes, sonidos);  // ← Agregar sonidos
+export const build = series(js, css, imagenes, sonidos);  
 
 // ✅ Desarrollo con watch - para npm run watch  
-export const desarrollo = series(js, css, imagenes, sonidos, dev);  // ← Agregar sonidos
+export const desarrollo = series(js, css, imagenes, sonidos, dev);  
 
 // ✅ Tarea por defecto - solo build (sin watch)
 export default build;
