@@ -146,7 +146,7 @@
 
     async function consultarAPI() {
         try {
-            const url = 'http://localhost:3000/api/servicios';
+            const url = 'https://localhost:3000/api/servicios';
             const resultado = await fetch(url);
             
             if (!resultado.ok) {
@@ -161,7 +161,7 @@
 
         // Mantén tu código existente para la tasa
         try {
-            const urlTasa = 'http://localhost:3000/api/tasa';
+            const urlTasa = 'https://localhost:3000/api/tasa';
             const resultadoTasa = await fetch(urlTasa);
             const Tasa = await resultadoTasa.json();
             mostrarResumen(Tasa);
@@ -866,7 +866,7 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
 
         try {
             // Obtener la tasa de la API
-            const url = 'http://localhost:3000/api/tasa';
+            const url = 'https://localhost:3000/api/tasa';
             const resultadoTasa = await fetch(url);
             const tasas = await resultadoTasa.json();
             
@@ -1029,7 +1029,7 @@ async function reservarCita() {
     datos.append('barberoId', barberoId); 
 
     try {
-        const url = 'http://localhost:3000/api/citas';
+        const url = 'https://localhost:3000/api/citas';
         const respuesta = await fetch(url, {
             method: 'POST',
             body: datos
