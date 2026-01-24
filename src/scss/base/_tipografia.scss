@@ -1,0 +1,54 @@
+@use 'variables' as v;
+@use 'mixins' as m;
+
+h1, h2, h3 {
+    font-family: v.$fuente_principal;
+    margin: 0 0 calc(v.$separacion / 2) 0 ;
+    font-weight: 900;
+    color: v.$blanco;
+    text-align: center;
+
+    &:hover{
+        color: #fae42c;
+    }
+}
+
+h1 {
+    font-size: 4rem;
+}
+h2 {
+    font-size: 3.6rem;
+}
+h3 {
+    font-size: 3rem;
+    text-align: center;
+}
+p {
+    color: v.$blanco;
+    font-size: 2rem;
+
+}
+
+.nombre-pagina{    
+    @include m.tablet{
+        margin: 8rem;
+    }
+    text-align: center;
+    margin-bottom: 3rem;
+    font-weight: v.$bold;
+    
+}
+
+.descripcion-pagina{
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.descripcion-pagina-login{
+    text-align: center;
+    font-weight: v.$bold;
+    
+    @include m.tablet{
+        margin-top: 6rem;
+    }
+}

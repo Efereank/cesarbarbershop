@@ -1,0 +1,73 @@
+@use "base/variables" as v;
+@use "base/mixins" as m;
+
+
+.acciones{
+    margin-top: v.$separacion;
+    @include m.tablet{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+
+    a{
+        color: v.$blanco;
+        display: block;
+        margin-bottom: calc(v.$separacion/2);
+        text-align: center;
+    }
+}
+
+.acciones-servicios{
+    margin-top: v.$separacion;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+
+    @include m.tablet{
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    a{
+        color: v.$negro;
+        display: block;
+        margin-bottom: 0;
+        text-align: center;
+    }
+
+    form {
+        width: 100%;
+        display: flex;
+        justify-content: center; 
+        
+        @include m.tablet{
+            width: auto;
+            display: block; 
+        }
+        
+        .boton-eliminar,
+        input[type="submit"] {
+            width: 100%;
+            box-sizing: border-box;
+            
+            @include m.tablet{
+                width: auto;
+            }
+        }
+
+        .boton-confirmar,
+        input[type="submit"] {
+
+            width: 100%;
+            box-sizing: border-box;
+            
+            @include m.tablet{
+                width: auto;
+            }
+        }
+    }
+}

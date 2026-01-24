@@ -1,0 +1,39 @@
+@use 'base/variables' as v;
+
+.alerta {
+    padding: calc(v.$separacion / 4);
+    color: v.$blanco;
+    width: 100%;
+    display: block;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-weight: v.$bold;
+
+
+    &.error{
+        background-color: v.$rojo;
+    }
+    &.exito{
+        background-color: rgb(30, 184, 158);
+    }
+
+}
+
+.swal2-popup {
+    font-size: 1.6rem !important;
+}
+
+.mensaje-error {
+    color: #dc3545;
+    font-size: 1.2rem;
+    margin-top: 0.5rem;
+    display: none;
+}
+
+.campo input:invalid {
+    border-color: #dc3545;
+}
+
+.campo input:valid {
+    border-color: #28a745;
+}
