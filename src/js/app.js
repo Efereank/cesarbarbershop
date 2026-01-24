@@ -144,37 +144,31 @@
         }
     }
 
-async function consultarAPI() {
-    try {
-        // Usa rutas relativas - DomCloud redirigirá a tu backend
-        const url = '/api/servicios';
-        const resultado = await fetch(url);
-        
-        if (!resultado.ok) {
-            throw new Error(`Error HTTP: ${resultado.status}`);
+    async function consultarAPI() {
+        try {
+            const url = 'http://localhost:3000/api/servicios';
+            const resultado = await fetch(url);
+            
+            if (!resultado.ok) {
+                throw new Error(`Error HTTP: ${resultado.status}`);
+            }
+            
+            const servicios = await resultado.json();
+            mostrarServicios(servicios);
+        } catch (error) {
+            mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
         }
-        
-        const servicios = await resultado.json();
-        mostrarServicios(servicios);
-    } catch (error) {
-        console.error('Error detallado:', error);
-        mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
-    }
 
-    try {
-        const urlTasa = '/api/tasa';
-        const resultadoTasa = await fetch(urlTasa);
-        
-        if (!resultadoTasa.ok) {
-            throw new Error(`Error HTTP: ${resultadoTasa.status}`);
+        // Mantén tu código existente para la tasa
+        try {
+            const urlTasa = 'http://localhost:3000/api/tasa';
+            const resultadoTasa = await fetch(urlTasa);
+            const Tasa = await resultadoTasa.json();
+            mostrarResumen(Tasa);
+        } catch (error) {
+            console.log(error);
         }
-        
-        const Tasa = await resultadoTasa.json();
-        mostrarResumen(Tasa);
-    } catch (error) {
-        console.error('Error en tasa:', error);
     }
-}
 
     function mostrarServicios(servicios) {
         window.todosLosServicios = servicios;
@@ -1035,7 +1029,7 @@ async function reservarCita() {
     datos.append('barberoId', barberoId); 
 
     try {
-        const url = 'https://localhost:3000/api/citas';
+        const url = 'http://localhost:3000/api/citas';
         const respuesta = await fetch(url, {
             method: 'POST',
             body: datos
