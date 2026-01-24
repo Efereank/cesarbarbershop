@@ -143,83 +143,28 @@
             });
         }
     }
-// Configuración automática de entorno
-function getBaseURL() {
-    const hostname = window.location.hostname;
-    const port = window.location.port;
-    
-    // Si estamos en localhost (desarrollo)
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return `http://localhost:3000`; // O el puerto de tu backend local
-    }
-    
-    // Si estamos en producción (DomCloud)
-    return window.location.origin; // https://cesarbarbershopmcbo.sao.dom.my.id
-}
 
 async function consultarAPI() {
-    const baseURL = getBaseURL();
-    console.log('Entorno detectado. Base URL:', baseURL);
-    
-    // Opcional: Variable para forzar localhost (debug)
-    // const baseURL = 'http://localhost:3000'; // Forzar desarrollo
-    
     try {
-        const url = `${baseURL}/api/servicios`;
-        console.log('Consultando:', url);
-        
-        const resultado = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            // Importante: cambia según entorno
-            credentials: baseURL.includes('localhost') ? 'omit' : 'same-origin',
-            mode: 'cors'
-        });
-        
-        console.log('Status:', resultado.status);
+        // CAMBIA https:// por http:// para localhost
+        const url = 'http://localhost:3000/api/servicios';
+        const resultado = await fetch(url);
         
         if (!resultado.ok) {
-            const errorText = await resultado.text();
-            console.error('Error response:', errorText);
             throw new Error(`Error HTTP: ${resultado.status}`);
         }
         
         const servicios = await resultado.json();
-        console.log('Servicios recibidos:', servicios);
         mostrarServicios(servicios);
-        
     } catch (error) {
-        console.error('Error completo:', error);
-        
-        // Mensajes específicos por entorno
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            if (getBaseURL().includes('localhost')) {
-                mostrarAlerta(
-                    'No se pudo conectar al servidor local. Verifica que el backend esté corriendo en puerto 3000.',
-                    'error',
-                    '.formulario'
-                );
-            } else {
-                mostrarAlerta('Error de conexión con el servidor.', 'error', '.formulario');
-            }
-        } else {
-            mostrarAlerta('Error al cargar los servicios: ' + error.message, 'error', '.formulario');
-        }
+        console.error('Error detallado:', error); // Agrega esto para debugging
+        mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
     }
 
     try {
-        const urlTasa = `${baseURL}/api/tasa`;
-        console.log('Consultando tasa:', urlTasa);
-        
-        const resultadoTasa = await fetch(urlTasa, {
-            headers: {
-                'Accept': 'application/json'
-            },
-            credentials: baseURL.includes('localhost') ? 'omit' : 'same-origin'
-        });
+        // CAMBIA aquí también
+        const urlTasa = 'http://localhost:3000/api/tasa';
+        const resultadoTasa = await fetch(urlTasa);
         
         if (!resultadoTasa.ok) {
             throw new Error(`Error HTTP: ${resultadoTasa.status}`);
@@ -227,12 +172,11 @@ async function consultarAPI() {
         
         const Tasa = await resultadoTasa.json();
         mostrarResumen(Tasa);
-        
     } catch (error) {
-        console.error('Error en tasa:', error);
-        // Silencioso para tasa
+        console.error('Error en tasa:', error); // Mejor logging
     }
 }
+
     function mostrarServicios(servicios) {
         window.todosLosServicios = servicios;
         
