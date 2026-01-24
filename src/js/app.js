@@ -11,6 +11,10 @@
         barberoId: '' // ← Nuevo campo para el barbero
     }
 
+    // Base URL para la API. En producción se usará el mismo origen por defecto,
+    // en desarrollo usa localhost:3000. Puedes sobrescribir con `window.__API_BASE__`.
+    const API_BASE = window.__API_BASE__ || ((location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'http://localhost:3000' : window.location.origin);
+
     document.addEventListener('DOMContentLoaded', function(){
         iniciarApp()
     });
@@ -146,7 +150,7 @@
 
     async function consultarAPI() {
         try {
-            const url = 'http://localhost:3000/api/servicios';
+            const url = `${API_BASE}/api/servicios`;
             const resultado = await fetch(url);
             
             if (!resultado.ok) {
@@ -161,7 +165,7 @@
 
         // Mantén tu código existente para la tasa
         try {
-            const urlTasa = 'http://localhost:3000/api/tasa';
+            const urlTasa = `${API_BASE}/api/tasa`;
             const resultadoTasa = await fetch(urlTasa);
             const Tasa = await resultadoTasa.json();
             mostrarResumen(Tasa);
@@ -325,7 +329,7 @@
 
 async function verificarDisponibilidad(fecha, hora, horaFin, duracion) {
     try {
-        const respuesta = await fetch('/citas/verificar-disponibilidad', {
+        const respuesta = await fetch(`${API_BASE}/citas/verificar-disponibilidad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -596,7 +600,7 @@ async function verificarDisponibilidad(fecha, hora, horaFin, duracion) {
 
     async function cargarBarberos() {
         try {
-            const respuesta = await fetch('/api/barberos');
+            const respuesta = await fetch(`${API_BASE}/api/barberos`);
             const barberos = await respuesta.json();
             mostrarBarberos(barberos);
         } catch (error) {
@@ -752,7 +756,7 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
 
 
     try {
-        const respuesta = await fetch('/citas/verificar-disponibilidad', {
+        const respuesta = await fetch(`${API_BASE}/citas/verificar-disponibilidad`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -866,7 +870,7 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
 
         try {
             // Obtener la tasa de la API
-            const url = 'http://localhost:3000/api/tasa';
+            const url = `${API_BASE}/api/tasa`;
             const resultadoTasa = await fetch(url);
             const tasas = await resultadoTasa.json();
             
@@ -1029,7 +1033,7 @@ async function reservarCita() {
     datos.append('barberoId', barberoId); 
 
     try {
-        const url = 'http://localhost:3000/api/citas';
+        const url = `${API_BASE}/api/citas`;
         const respuesta = await fetch(url, {
             method: 'POST',
             body: datos
