@@ -1036,7 +1036,7 @@ async function reservarCita() {
     datos.append('barberoId', barberoId); 
 
     try {
-        const url = 'http://localhost:3000/api/citas';
+        const url = 'https://localhost:3000/api/citas';
         const respuesta = await fetch(url, {
             method: 'POST',
             body: datos
