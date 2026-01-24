@@ -146,8 +146,8 @@
 
 async function consultarAPI() {
     try {
-        // CAMBIA https:// por http:// para localhost
-        const url = 'http://localhost:3000/api/servicios';
+        // Usa rutas relativas - DomCloud redirigirá a tu backend
+        const url = '/api/servicios';
         const resultado = await fetch(url);
         
         if (!resultado.ok) {
@@ -157,13 +157,12 @@ async function consultarAPI() {
         const servicios = await resultado.json();
         mostrarServicios(servicios);
     } catch (error) {
-        console.error('Error detallado:', error); // Agrega esto para debugging
+        console.error('Error detallado:', error);
         mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
     }
 
     try {
-        // CAMBIA aquí también
-        const urlTasa = 'http://localhost:3000/api/tasa';
+        const urlTasa = '/api/tasa';
         const resultadoTasa = await fetch(urlTasa);
         
         if (!resultadoTasa.ok) {
@@ -173,7 +172,7 @@ async function consultarAPI() {
         const Tasa = await resultadoTasa.json();
         mostrarResumen(Tasa);
     } catch (error) {
-        console.error('Error en tasa:', error); // Mejor logging
+        console.error('Error en tasa:', error);
     }
 }
 
