@@ -144,31 +144,38 @@
         }
     }
 
-    async function consultarAPI() {
-        try {
-            const url = 'https://localhost:3000/api/servicios';
-            const resultado = await fetch(url);
-            
-            if (!resultado.ok) {
-                throw new Error(`Error HTTP: ${resultado.status}`);
-            }
-            
-            const servicios = await resultado.json();
-            mostrarServicios(servicios);
-        } catch (error) {
-            mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
+async function consultarAPI() {
+    try {
+        // CAMBIA https:// por http:// para localhost
+        const url = 'http://localhost:3000/api/servicios';
+        const resultado = await fetch(url);
+        
+        if (!resultado.ok) {
+            throw new Error(`Error HTTP: ${resultado.status}`);
         }
-
-        // Mantén tu código existente para la tasa
-        try {
-            const urlTasa = 'https://localhost:3000/api/tasa';
-            const resultadoTasa = await fetch(urlTasa);
-            const Tasa = await resultadoTasa.json();
-            mostrarResumen(Tasa);
-        } catch (error) {
-            console.log(error);
-        }
+        
+        const servicios = await resultado.json();
+        mostrarServicios(servicios);
+    } catch (error) {
+        console.error('Error detallado:', error); // Agrega esto para debugging
+        mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
     }
+
+    try {
+        // CAMBIA aquí también
+        const urlTasa = 'http://localhost:3000/api/tasa';
+        const resultadoTasa = await fetch(urlTasa);
+        
+        if (!resultadoTasa.ok) {
+            throw new Error(`Error HTTP: ${resultadoTasa.status}`);
+        }
+        
+        const Tasa = await resultadoTasa.json();
+        mostrarResumen(Tasa);
+    } catch (error) {
+        console.error('Error en tasa:', error); // Mejor logging
+    }
+}
 
     function mostrarServicios(servicios) {
         window.todosLosServicios = servicios;
@@ -866,7 +873,7 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
 
         try {
             // Obtener la tasa de la API
-            const url = 'https://localhost:3000/api/tasa';
+            const url = 'http://localhost:3000/api/tasa';
             const resultadoTasa = await fetch(url);
             const tasas = await resultadoTasa.json();
             
@@ -1029,7 +1036,7 @@ async function reservarCita() {
     datos.append('barberoId', barberoId); 
 
     try {
-        const url = 'https://localhost:3000/api/citas';
+        const url = 'http://localhost:3000/api/citas';
         const respuesta = await fetch(url, {
             method: 'POST',
             body: datos
