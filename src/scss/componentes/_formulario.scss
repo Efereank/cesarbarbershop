@@ -172,21 +172,39 @@
 
 .campo-login{
     display: flex;
-    margin-bottom: 2rem;
     align-items: center;
+    gap: calc(v.$separacion / 4);
+    margin-bottom: 2rem;
     background-color: v.$blanco;
     border-radius: 1rem;
-    
+    width: 100%;
+    box-sizing: border-box;
+    padding: calc(v.$separacion / 4);
+    overflow: hidden;
+
+    // estado deshabilitado (contenedor o hijos)
+    &:disabled,
     :disabled {
         opacity: 0.5;
-        cursor:not-allowed;
+        cursor: not-allowed;
     }
 
     input{
-        flex: 1;
+        flex: 1 1 auto;
+        min-width: 0; // importante para evitar overflow en flex
         border: none;
+        padding: 0;
+        background: transparent;
+        border-radius: 0;
+    }
+
+    @include m.telefono {
         padding: calc(v.$separacion / 4);
-        border-radius: 1rem;
+        gap: calc(v.$separacion / 6);
+
+        input{
+            font-size: 1.6rem; // evita zoom en iOS si hace falta
+        }
     }
 }
 

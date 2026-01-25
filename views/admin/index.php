@@ -11,7 +11,7 @@ include_once __DIR__ . ("/../templates/barra.php");
 </div>
 
 
-<h1 class="nombre-pagina">Panel de Administración</h1>
+<h1 class="nombre-pagina">Panel Administración</h1>
 
 
     <div class="panel">
