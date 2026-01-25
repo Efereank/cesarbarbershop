@@ -170,24 +170,35 @@
     }
 }
 
-.campo-login{
-    display: flex;
-    margin-bottom: 2rem;
-    align-items: center;
-    background-color: v.$blanco;
-    border-radius: 1rem;
-    
-    :disabled {
-        opacity: 0.5;
-        cursor:not-allowed;
-    }
+.campo-login {
+  display: flex;
+  margin-bottom: 1.5rem;
+  align-items: center;
+  background-color: v.$blanco;
+  border-radius: 0.8rem;
+  padding: 0.5rem;
+  gap: 0.5rem;
+  border: 1px solid #e0e0e0;
+  
+  :disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-    input{
-        flex: 1;
-        border: none;
-        padding: calc(v.$separacion / 4);
-        border-radius: 1rem;
+  input {
+    flex: 1;
+    border: none;
+    padding: 0.6rem;
+    border-radius: 0.6rem;
+    font-size: 1.4rem;
+    min-height: 36px;
+    width: 100%;
+    background: transparent;
+    
+    &:focus {
+      outline: none;
     }
+  }
 }
 
 // Responsive para móviles
