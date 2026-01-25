@@ -11,6 +11,18 @@
         barberoId: '' // ← Nuevo campo para el barbero
     }
 
+    // Helper to build API URLs using the current origin to avoid requests to localhost from a deployed front-end
+    function getApiUrl(path) {
+        // If an absolute URL is passed, return it unchanged
+        try {
+            const urlObj = new URL(path);
+            return urlObj.toString();
+        } catch (e) {
+            // For relative paths, use the current origin (protocol + host)
+            return `${window.location.origin}${path}`;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function(){
         iniciarApp()
     });
@@ -146,8 +158,8 @@
 
     async function consultarAPI() {
         try {
-            const url = '/api/servicios';
-            const resultado = await fetch(url);
+            const url = getApiUrl('/api/servicios');
+            const resultado = await fetch(url, { credentials: 'include' });
             
             if (!resultado.ok) {
                 throw new Error(`Error HTTP: ${resultado.status}`);
@@ -156,17 +168,21 @@
             const servicios = await resultado.json();
             mostrarServicios(servicios);
         } catch (error) {
-            mostrarAlerta('Error al cargar los servicios', 'error', '.formulario');
+            console.error('Error al cargar los servicios:', error);
+            mostrarAlerta('Error al cargar los servicios (verifica la URL del API o CORS)', 'error', '.formulario');
         }
 
         // Mantén tu código existente para la tasa
         try {
-            const urlTasa = '/api/tasa';
-            const resultadoTasa = await fetch(urlTasa);
+            const urlTasa = getApiUrl('/api/tasa');
+            const resultadoTasa = await fetch(urlTasa, { credentials: 'include' });
+            if (!resultadoTasa.ok) {
+                throw new Error(`Error HTTP: ${resultadoTasa.status}`);
+            }
             const Tasa = await resultadoTasa.json();
             mostrarResumen(Tasa);
         } catch (error) {
-            console.log(error);
+            console.error('Error al cargar la tasa:', error);
         }
     }
 
