@@ -1,4 +1,4 @@
-<h1 class="nombre-pagina">Cesar's Barbershop</h1>
+<h1 class="nombre-pagina">Cesar's BarbershSSop</h1>
 <p class="descripcion-pagina-login">Iniciar Sesión</p>
 
 <?php
