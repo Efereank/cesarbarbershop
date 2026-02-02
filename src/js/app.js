@@ -919,13 +919,31 @@ async function cargarHorariosDisponibles() {
         
         const mananaFiltrados = filtrarHorarios(horariosManana);
         const tardeFiltrados = filtrarHorarios(horariosTarde);
-        
+
+        // Obtener fecha y hora actual en Venezuela (UTC-4)
+        const ahora = new Date();
+        const opciones = { timeZone: 'America/Caracas' };
+        const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
+        const fechaActualStr = ahoraVenezuela.toISOString().slice(0, 10); // YYYY-MM-DD
+
+        // Si la fecha seleccionada es hoy, filtrar horarios pasados
+        function horarioNoPasado(horario) {
+            if (cita.fecha !== fechaActualStr) return true;
+            const [h, m] = horario.split(':').map(Number);
+            const horaTurno = new Date(ahoraVenezuela.getFullYear(), ahoraVenezuela.getMonth(), ahoraVenezuela.getDate(), h, m);
+            // Mostrar solo horarios estrictamente después de la hora actual
+            return horaTurno.getTime() > ahoraVenezuela.getTime();
+        }
+
+        const mananaFiltradosFinal = mananaFiltrados.filter(horarioNoPasado);
+        const tardeFiltradosFinal = tardeFiltrados.filter(horarioNoPasado);
+
         // Verificar disponibilidad para cada horario
         const verificarDisponibilidadPromesas = [
-            ...mananaFiltrados.map(horario => verificarDisponibilidadIndividual(
+            ...mananaFiltradosFinal.map(horario => verificarDisponibilidadIndividual(
                 cita.fecha, horario, duracion, cita.barberoId, false
             ).then(disponible => ({ horario, disponible, grupo: 'manana' }))),
-            ...tardeFiltrados.map(horario => verificarDisponibilidadIndividual(
+            ...tardeFiltradosFinal.map(horario => verificarDisponibilidadIndividual(
                 cita.fecha, horario, duracion, cita.barberoId, false
             ).then(disponible => ({ horario, disponible, grupo: 'tarde' })))
         ];
