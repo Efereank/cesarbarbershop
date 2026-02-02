@@ -363,50 +363,167 @@ async function verificarDisponibilidad(fecha, hora, horaFin, duracion) {
     }
 }
 
+function seleccionarFecha() {
+    const selectorFechasContainer = document.querySelector('#selector-fechas');
+    const inputFechaHidden = document.querySelector('#fecha');
+    if (!selectorFechasContainer || !inputFechaHidden) return;
 
-    function seleccionarFecha() {
-        const inputFecha = document.querySelector('#fecha');
-        if (!inputFecha) return;
+    // Crear estructura con flechas
+    selectorFechasContainer.innerHTML = `
+        <div class="selector-fechas-container">
+            <button type="button" class="flecha-deslizable flecha-izquierda" id="flecha-izquierda" aria-label="Días anteriores">
+                <span>&#9664;</span>
+            </button>
+            <div class="selector-fechas" id="contenedor-fechas"></div>
+            <button type="button" class="flecha-deslizable flecha-derecha" id="flecha-derecha" aria-label="Días siguientes">
+                <span>&#9654;</span>
+            </button>
+        </div>
+    `;
 
-        // Establecer rango de fechas (hoy hasta hoy + 4 días)
-        const hoy = new Date();
-        const fechaMinima = hoy.toISOString().split('T')[0];
+    const contenedorFechas = selectorFechasContainer.querySelector('#contenedor-fechas');
+    const flechaIzquierda = selectorFechasContainer.querySelector('#flecha-izquierda');
+    const flechaDerecha = selectorFechasContainer.querySelector('#flecha-derecha');
+
+    // Nombres de días en español
+    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    // Obtener fecha actual SIN horas/minutos/segundos (para evitar problemas de zona horaria)
+    const hoy = new Date();
+    const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    
+    // Generar 5 días
+    for (let i = 0; i < 5; i++) {
+        const fecha = new Date(hoyLocal);
+        fecha.setDate(hoyLocal.getDate() + i);
         
-        const fechaMaxima = new Date();
-        fechaMaxima.setDate(hoy.getDate() + 4);
-        const fechaMaximaFormato = fechaMaxima.toISOString().split('T')[0];
+        const diaSemana = fecha.getDay();
+        const diaNumero = fecha.getDate();
+        const mes = fecha.getMonth();
         
-        inputFecha.min = fechaMinima;
-        inputFecha.max = fechaMaximaFormato;
-
-        inputFecha.addEventListener('input', function(e){
-            const dia = new Date(e.target.value).getUTCDay();
-            
-            if ([0].includes(dia)) {
-                e.target.value = '';
-                mostrarAlerta('Los domingos no están permitidos', 'error', '.formulario');
-            } else { 
-                cita.fecha = e.target.value;
-                cargarHorariosDisponibles();
-            }
+        const diaOption = document.createElement('div');
+        diaOption.className = 'dia-option';
+        
+        // Deshabilitar domingos (0 = Domingo)
+        if (diaSemana === 0) {
+            diaOption.classList.add('deshabilitado');
+        }
+        
+        // Formatear fecha como YYYY-MM-DD para el valor - CORREGIDO
+        // Usar fecha local en lugar de UTC
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        const fechaFormato = `${year}-${month}-${day}`;
+        
+        diaOption.dataset.fecha = fechaFormato;
+        
+        // Para depuración (puedes quitarlo después)
+        diaOption.title = `Seleccionar: ${fechaFormato} (Mostrando: ${diaNumero})`;
+        
+        // Contenido HTML
+        diaOption.innerHTML = `
+            <div class="dia-semana">${diasSemana[diaSemana]}</div>
+            <div class="dia-numero">${diaNumero.toString().padStart(2, '0')}</div>
+            <div class="dia-mes">${meses[mes]}</div>
+        `;
+        
+        // Evento click solo para días habilitados
+        if (diaSemana !== 0) {
+            diaOption.addEventListener('click', function() {
+                const estaSeleccionado = this.classList.contains('seleccionado');
+                
+                if (estaSeleccionado) {
+                    this.classList.remove('seleccionado');
+                    inputFechaHidden.value = '';
+                    
+                    if (typeof cita !== 'undefined') {
+                        cita.fecha = '';
+                        if (typeof cargarHorariosDisponibles !== 'undefined') {
+                            cargarHorariosDisponibles();
+                        }
+                    }
+                    
+                    console.log('Fecha deseleccionada:', this.dataset.fecha);
+                } else {
+                    document.querySelectorAll('.dia-option.seleccionado').forEach(el => {
+                        el.classList.remove('seleccionado');
+                    });
+                    
+                    this.classList.add('seleccionado');
+                    inputFechaHidden.value = this.dataset.fecha;
+                    
+                    if (typeof cita !== 'undefined') {
+                        cita.fecha = this.dataset.fecha;
+                        if (typeof cargarHorariosDisponibles !== 'undefined') {
+                            cargarHorariosDisponibles();
+                        }
+                    }
+                    
+                    // Para depuración
+                    console.log('Fecha seleccionada:', this.dataset.fecha);
+                    console.log('Día mostrado en pantalla:', diaNumero);
+                    console.log('Fecha completa del objeto:', fecha.toString());
+                }
+            });
+        }
+        
+        contenedorFechas.appendChild(diaOption);
+    }
+    
+    // Selección automática del primer día disponible
+    if (hoyLocal.getDay() !== 0) {
+        const primerDia = contenedorFechas.querySelector('.dia-option:not(.deshabilitado)');
+        if (primerDia) {
+            primerDia.click();
+        }
+    }
+    
+    // Configurar flechas deslizantes
+    function deslizar(direccion) {
+        const anchoDia = 80; // 70px + 10px gap
+        const scrollActual = contenedorFechas.scrollLeft;
+        const nuevoScroll = direccion === 'derecha' 
+            ? scrollActual + (anchoDia * 3)
+            : scrollActual - (anchoDia * 3);
+        
+        contenedorFechas.scrollTo({
+            left: nuevoScroll,
+            behavior: 'smooth'
         });
     }
+    
+    // Event listeners para flechas con preventDefault
+    flechaIzquierda.addEventListener('click', (e) => {
+        e.preventDefault();
+        deslizar('izquierda');
+    });
+    
+    flechaDerecha.addEventListener('click', (e) => {
+        e.preventDefault();
+        deslizar('derecha');
+    });
+    
+    // También permitir scroll con rueda del mouse
+    contenedorFechas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        contenedorFechas.scrollLeft += e.deltaY * 0.5;
+    }, { passive: false });
+}
 
-    function seleccionarHora() {
-        const inputHora = document.querySelector('#hora');
-        const inputFecha = document.querySelector('#fecha'); 
-        
-        inputHora.addEventListener('input', validarHoraCita);
-        
-        inputFecha.addEventListener('input', function(e) {
-            if (typeof cita !== 'undefined') {
-                cita.fecha = e.target.value;
-            }
-            validarHoraCita(e); 
-        });
+function seleccionarHora() {
+    const inputFecha = document.querySelector('#fecha'); 
+    
+    inputFecha.addEventListener('input', function(e) {
+        if (typeof cita !== 'undefined') {
+            cita.fecha = e.target.value;
+        }
+        // No llamamos a validarHoraCita aquí, se llama desde cargarHorariosDisponibles
+    });
 
-        actualizarDuracionServicio();
-    }
+    actualizarDuracionServicio();
+}
 
     async function validarHoraCita(e) {
         const inputHora = document.querySelector('#hora');
@@ -594,157 +711,327 @@ async function verificarDisponibilidad(fecha, hora, horaFin, duracion) {
         }
     }
 
-    async function cargarBarberos() {
-        try {
-            const respuesta = await fetch('/api/barberos');
-            const barberos = await respuesta.json();
-            mostrarBarberos(barberos);
-        } catch (error) {
-            console.error('Error al cargar barberos:', error);
-            mostrarAlerta('Error al cargar la lista de barberos', 'error', '.formulario');
-        }
+async function cargarBarberos() {
+    try {
+        const respuesta = await fetch('/api/barberos');
+        const barberos = await respuesta.json();
+        mostrarBarberosVisual(barberos);
+    } catch (error) {
+        console.error('Error al cargar barberos:', error);
+        mostrarAlerta('Error al cargar la lista de barberos', 'error', '.formulario');
     }
+}
 
-    function mostrarBarberos(barberos) {
-        const selectBarbero = document.querySelector('#barberoId');
-        if (!selectBarbero) return;
-        
-        selectBarbero.innerHTML = '<option value="">Selecciona un barbero</option>';
-        
-        if (barberos && barberos.length > 0) {
-            barberos.forEach(barbero => {
-                const option = document.createElement('option');
-                option.value = barbero.id;
-                option.textContent = `${barbero.nombre} - ${barbero.especialidad || 'Barbero'}`;
-                selectBarbero.appendChild(option);
-            });
+function mostrarBarberosVisual(barberos) {
+    const selectorBarberos = document.querySelector('#selector-barberos');
+    const inputBarberoHidden = document.querySelector('#barberoId');
+    
+    if (!selectorBarberos || !inputBarberoHidden) return;
+    // Limpiar y crear estructura
+    selectorBarberos.innerHTML = `
+        <div class="selector-fechas-container">
+            <button type="button" class="flecha-deslizable flecha-izquierda" id="flecha-izquierda-barberos" aria-label="Barberos anteriores">
+                <span>&#9664;</span>
+            </button>
+            <div class="contenedor-barberos" id="contenedor-barberos"></div>
+            <button type="button" class="flecha-deslizable flecha-derecha" id="flecha-derecha-barberos" aria-label="Más barberos">
+                <span>&#9654;</span>
+            </button>
+        </div>
+    `;
+    
+    const contenedorBarberos = selectorBarberos.querySelector('#contenedor-barberos');
+    const flechaIzquierda = selectorBarberos.querySelector('#flecha-izquierda-barberos');
+    const flechaDerecha = selectorBarberos.querySelector('#flecha-derecha-barberos');
+    
+    if (barberos && barberos.length > 0) {
+        barberos.forEach(barbero => {
+            const barberoOption = document.createElement('div');
+            barberoOption.className = 'barbero-option';
+            barberoOption.dataset.barberoId = barbero.id;
+            barberoOption.dataset.barberoNombre = barbero.nombre;
             
-        selectBarbero.value = "";
-        cita.barberoId = '';
-        selectBarbero.disabled = false;
+            // Determinar estado (puedes modificar esta lógica)
+            const estaDisponible = barbero.disponible !== false; // Asume disponible por defecto
+            const estadoClase = estaDisponible ? 'estado-disponible' : 'estado-ocupado';
+            const estadoTexto = estaDisponible ? 'Disponible' : 'Ocupado';
+            
+            barberoOption.innerHTML = `
+                <div class="nombre-barbero">${barbero.nombre}</div>
+                ${barbero.especialidad ? `<div class="especialidad-barbero">${barbero.especialidad}</div>` : ''}
+                <div class="estado-barbero ${estadoClase}">${estadoTexto}</div>
+            `;
+            
+            // Solo hacer clicable si está disponible
+            if (estaDisponible) {
+                barberoOption.addEventListener('click', function() {
+                    const estaSeleccionado = this.classList.contains('seleccionado');
+                    
+                    if (estaSeleccionado) {
+                        // Deseleccionar
+                        this.classList.remove('seleccionado');
+                        inputBarberoHidden.value = '';
+                        cita.barberoId = '';
+                        cita.barberoNombre = '';
+                    } else {
+                        // Deseleccionar todos primero
+                        document.querySelectorAll('.barbero-option.seleccionado').forEach(el => {
+                            el.classList.remove('seleccionado');
+                        });
+                        
+                        // Seleccionar este barbero
+                        this.classList.add('seleccionado');
+                        inputBarberoHidden.value = this.dataset.barberoId;
+                        cita.barberoId = this.dataset.barberoId;
+                        cita.barberoNombre = this.dataset.barberoNombre;
+                        
+                        // Mostrar confirmación
+                        mostrarAlerta(`Barbero seleccionado: ${cita.barberoNombre}`, 'exito', '.formulario', 2000);
+                        
+                        // Si ya hay una fecha seleccionada, cargar horarios
+                        if (cita.fecha) {
+                            cargarHorariosDisponibles();
+                        }
+                    }
+                });
+            } else {
+                barberoOption.classList.add('deshabilitado');
+                barberoOption.title = 'Barbero no disponible en este momento';
+            }
+            
+            contenedorBarberos.appendChild(barberoOption);
+        });
+        
+        // Si solo hay un barbero, seleccionarlo automáticamente
+        if (barberos.length === 1 && barberos[0].disponible !== false) {
+            setTimeout(() => {
+                const primerBarbero = contenedorBarberos.querySelector('.barbero-option:not(.deshabilitado)');
+                if (primerBarbero) {
+                    primerBarbero.click();
+                }
+            }, 100);
+        }
+    } else {
+        selectorBarberos.innerHTML = '<p class="mensaje-info">No hay barberos disponibles en este momento</p>';
+    }
+    
+    // Configurar flechas deslizantes para barberos
+    function actualizarFlechasBarberos() {
+        const scrollLeft = contenedorBarberos.scrollLeft;
+        const scrollWidth = contenedorBarberos.scrollWidth;
+        const clientWidth = contenedorBarberos.clientWidth;
+        
+        // Ocultar flecha izquierda si está al inicio
+        if (scrollLeft <= 10) {
+            flechaIzquierda.classList.add('oculta');
         } else {
-            const option = document.createElement('option');
-            option.value = '';
-            option.textContent = 'No hay barberos disponibles';
-            selectBarbero.appendChild(option);
-            selectBarbero.disabled = true;
+            flechaIzquierda.classList.remove('oculta');
         }
         
-        // Event listener para cuando cambia el barbero
-        selectBarbero.addEventListener('change', function() {
-            cita.barberoId = this.value;
-            // Si ya hay una fecha seleccionada, recargar horarios
-            if (cita.fecha) {
-                cargarHorariosDisponibles();
-            }
-        });
+        // Ocultar flecha derecha si está al final
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+            flechaDerecha.classList.add('oculta');
+        } else {
+            flechaDerecha.classList.remove('oculta');
+        }
     }
-
+    
+    function deslizarBarberos(direccion) {
+        const anchoBarbero = 130; // 120px + 10px gap
+        const scrollActual = contenedorBarberos.scrollLeft;
+        const nuevoScroll = direccion === 'derecha' 
+            ? scrollActual + (anchoBarbero * 2)
+            : scrollActual - (anchoBarbero * 2);
+        
+        contenedorBarberos.scrollTo({
+            left: nuevoScroll,
+            behavior: 'smooth'
+        });
+        
+        setTimeout(actualizarFlechasBarberos, 300);
+    }
+    
+    flechaIzquierda.addEventListener('click', (e) => {
+        e.preventDefault();
+        deslizarBarberos('izquierda');
+    });
+    
+    flechaDerecha.addEventListener('click', (e) => {
+        e.preventDefault();
+        deslizarBarberos('derecha');
+    });
+    
+    contenedorBarberos.addEventListener('scroll', actualizarFlechasBarberos);
+    setTimeout(actualizarFlechasBarberos, 100);
+    
+    // Scroll con rueda
+    contenedorBarberos.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        contenedorBarberos.scrollLeft += e.deltaY * 0.5;
+        setTimeout(actualizarFlechasBarberos, 50);
+    }, { passive: false });
+}
 
 
 async function cargarHorariosDisponibles() {
-    const selectHora = document.querySelector('#hora');
-    if (!selectHora) return;
+    const selectorHoras = document.querySelector('#selector-horas');
+    if (!selectorHoras) return;
     
     if (!cita.fecha) {
-        selectHora.innerHTML = '<option value="">Selecciona una fecha primero</option>';
-        selectHora.disabled = true;
+        selectorHoras.innerHTML = '<p class="mensaje-info"> Selecciona una Fecha.</p>';
         return;
     }
 
     if (!cita.barberoId) {
-        selectHora.innerHTML = '<option value="">Selecciona un barbero primero</option>';
-        selectHora.disabled = true;
+        selectorHoras.innerHTML = '<p class="mensaje-info"> Ahora selecciona un Barbero. </p>';
         return;
     }
 
     // Mostrar loading
-    selectHora.innerHTML = '<option value="">Cargando horarios disponibles...</option>';
-    selectHora.disabled = true;
+    selectorHoras.innerHTML = '<p class="mensaje-info">Cargando horarios disponibles...</p>';
     
     try {
         const duracion = calcularDuracionTotal();
         
-        // Generar horarios de 10:00 a 19:30 cada 15 minutos
-        const horarios = [];
-        for (let hora = 10; hora < 20; hora++) {
-            for (let minuto = 0; minuto < 60; minuto += 15) {
-                // Verificar que no se pase del horario de cierre considerando la duración
+        // Generar horarios de 10:00 a 19:30 cada 30 minutos (como en la imagen)
+        const horariosManana = [
+            '10:00', '10:30', '11:00', '11:30'
+        ];
+        
+        const horariosTarde = [
+            '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+            '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+            '18:00', '18:30', '19:00', '19:30'
+        ];
+        
+        // Filtrar horarios que no excedan el cierre considerando la duración
+        const horarioCierre = 20; // 20:00
+        
+        const filtrarHorarios = (horarios) => {
+            return horarios.filter(horario => {
+                const [hora, minutos] = horario.split(':').map(Number);
                 const horaFin = new Date();
-                horaFin.setHours(hora, minuto + duracion, 0, 0);
-                const horarioCierre = new Date();
-                horarioCierre.setHours(20, 0, 0, 0);
-                
-                if (horaFin <= horarioCierre) {
-                    const horaStr = hora.toString().padStart(2, '0');
-                    const minutoStr = minuto.toString().padStart(2, '0');
-                    const horarioCompleto = `${horaStr}:${minutoStr}`;
-                    
-                    const validacionTiempo = validarHoraContraActual(cita.fecha, horarioCompleto);
-                    
-                    if (validacionTiempo.valido) {
-                        horarios.push(horarioCompleto);
-                    }
-                }
-            }
-        }
+                horaFin.setHours(hora, minutos + duracion, 0, 0);
+                return horaFin.getHours() < horarioCierre || 
+                      (horaFin.getHours() === horarioCierre && horaFin.getMinutes() === 0);
+            });
+        };
+        
+        const mananaFiltrados = filtrarHorarios(horariosManana);
+        const tardeFiltrados = filtrarHorarios(horariosTarde);
         
         // Verificar disponibilidad para cada horario
-        const horariosDisponibles = [];
+        const verificarDisponibilidadPromesas = [
+            ...mananaFiltrados.map(horario => verificarDisponibilidadIndividual(
+                cita.fecha, horario, duracion, cita.barberoId, false
+            ).then(disponible => ({ horario, disponible, grupo: 'manana' }))),
+            ...tardeFiltrados.map(horario => verificarDisponibilidadIndividual(
+                cita.fecha, horario, duracion, cita.barberoId, false
+            ).then(disponible => ({ horario, disponible, grupo: 'tarde' })))
+        ];
         
-        for (const horario of horarios) {
-            const disponible = await verificarDisponibilidadIndividual(
-                cita.fecha, 
-                horario, 
-                duracion, 
-                cita.barberoId,
-                false
-            );
-            
+        const resultados = await Promise.all(verificarDisponibilidadPromesas);
+        
+        // Separar resultados por grupo
+        const horariosDisponiblesManana = [];
+        const horariosDisponiblesTarde = [];
+        
+        resultados.forEach(resultado => {
+            const { horario, disponible, grupo } = resultado;
             if (disponible) {
-                horariosDisponibles.push({
-                    hora: horario,
-                    display: horario,
-                    disponible: true
-                });
-            }
-        }
-        
-        selectHora.innerHTML = '';
-        selectHora.disabled = false;
-        
-        if (horariosDisponibles.length > 0) {
-            const optionDefault = document.createElement('option');
-            optionDefault.value = '';
-            optionDefault.textContent = 'Selecciona una hora';
-            selectHora.appendChild(optionDefault);
-            
-            horariosDisponibles.forEach(horario => {
-                const option = document.createElement('option');
-                option.value = horario.hora;
-                option.textContent = horario.display;
-                selectHora.appendChild(option);
-            });
-            
-            if (cita.hora) {
-                const opcionExistente = Array.from(selectHora.options).find(opt => opt.value === cita.hora);
-                if (opcionExistente) {
-                    selectHora.value = cita.hora;
+                if (grupo === 'manana') {
+                    horariosDisponiblesManana.push(horario);
                 } else {
-                    cita.hora = '';
+                    horariosDisponiblesTarde.push(horario);
                 }
             }
-        } else {
-            selectHora.innerHTML = '<option value="">No hay horarios disponibles para esta fecha</option>';
-            selectHora.disabled = true;
+        });
+        
+        // Construir el HTML con el nuevo diseño
+        let html = '<div class="selector-horas-contenedor">';
+        
+        // Grupo Mañana
+        if (horariosDisponiblesManana.length > 0) {
+            html += '<div class="grupo-horas">';
+            html += '<div class="titulo-grupo">Mañana</div>';
+            html += '<div class="contenedor-horas">';
+            
+            horariosDisponiblesManana.forEach(horario => {
+                const horaDisplay = formatearHora12h(horario);
+                html += `<div class="hora-option" data-hora="${horario}">${horaDisplay}</div>`;
+            });
+            
+            html += '</div></div>';
+        }
+        
+        // Grupo Tarde
+        if (horariosDisponiblesTarde.length > 0) {
+            html += '<div class="grupo-horas">';
+            html += '<div class="titulo-grupo">Tarde</div>';
+            html += '<div class="contenedor-horas">';
+            
+            horariosDisponiblesTarde.forEach(horario => {
+                const horaDisplay = formatearHora12h(horario);
+                html += `<div class="hora-option" data-hora="${horario}">${horaDisplay}</div>`;
+            });
+            
+            html += '</div></div>';
+        }
+        
+        html += '</div>';
+        
+        // Si no hay horarios disponibles
+        if (horariosDisponiblesManana.length === 0 && horariosDisponiblesTarde.length === 0) {
+            html = '<p class="mensaje-error">No hay horarios disponibles para esta fecha</p>';
             mostrarAlerta('No hay horarios disponibles para la fecha seleccionada. Intenta con otra fecha o reduce los servicios.', 'error', '.formulario');
         }
+        
+        selectorHoras.innerHTML = html;
+        
+        // Agregar event listeners a los botones de hora
+        document.querySelectorAll('.hora-option').forEach(boton => {
+            boton.addEventListener('click', async function() {
+                // Deseleccionar todas las horas
+                document.querySelectorAll('.hora-option.seleccionada').forEach(el => {
+                    el.classList.remove('seleccionada');
+                });
+                
+                // Seleccionar esta hora
+                this.classList.add('seleccionada');
+                
+                // Establecer valor en input hidden
+                const inputHora = document.querySelector('#hora');
+                inputHora.value = this.dataset.hora;
+                
+                // Guardar en objeto cita
+                cita.hora = this.dataset.hora;
+                
+                // Ejecutar validaciones
+                await validarHoraCita({ target: inputHora });
+            });
+        });
+        
+        // Si ya había una hora seleccionada, marcarla
+        if (cita.hora) {
+            const horaSeleccionada = document.querySelector(`.hora-option[data-hora="${cita.hora}"]`);
+            if (horaSeleccionada) {
+                horaSeleccionada.classList.add('seleccionada');
+            }
+        }
+        
     } catch (error) {
         console.error('Error al cargar horarios:', error);
-        selectHora.innerHTML = '<option value="">Error al cargar horarios</option>';
-        selectHora.disabled = true;
+        selectorHoras.innerHTML = '<p class="mensaje-error">Error al cargar horarios</p>';
         mostrarAlerta('Error al cargar los horarios disponibles', 'error', '.formulario');
     }
+}
+
+// Función para formatear hora 24h a 12h
+function formatearHora12h(hora24) {
+    const [horas, minutos] = hora24.split(':').map(Number);
+    const ampm = horas >= 12 ? 'pm' : 'am';
+    const horas12 = horas % 12 || 12;
+    return `${horas12}:${minutos.toString().padStart(2, '0')} ${ampm}`;
 }
 
 
@@ -895,8 +1182,7 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
             const hora_fin = hoy.toTimeString().slice(0, 5);
 
             // Obtener nombre del barbero seleccionado
-            const selectBarbero = document.querySelector('#barberoId');
-            const nombreBarbero = selectBarbero ? selectBarbero.options[selectBarbero.selectedIndex].textContent : 'No seleccionado';
+            const nombreBarbero = cita.barberoNombre || 'No seleccionado';
 
             const headingServicios = document.createElement('H3');
             headingServicios.textContent = 'Servicios';

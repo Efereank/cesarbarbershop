@@ -33,24 +33,34 @@ include_once __DIR__ . '/../templates/barra.php';
                 <input type="text" name="nombre" placeholder="tu nombre" id="nombre" value="<?php echo $nombre; ?>" disabled>
             </div>
 
-            <div class="campo">
-                <label for="fecha">Fecha</label>
-                <input type="date" id="fecha" min="<?php echo date('Y-m-d'); ?>">
-            </div>
+        <div class="campo">
+            <label for="fecha">Fecha:</label>
+            <div id="selector-fechas">
 
-            <div class="campo">
-                <label for="barberoId">Barbero:</label>
-                <select id="barberoId" name="hora" required>
-                    <option value="">Selecciona un barbero</option>
-                </select>
             </div>
+            <input type="hidden" id="fecha" name="fecha" required>
+        </div>
 
-            <div class="campo">
-                <label for="hora">Hora</label>
-                <select id="hora" name="hora" required>
-                    <option value="">Selecciona una hora</option>
-                </select>
-            </div>
+<div class="campo">
+    <label for="barberoId">Barbero</label>
+    <div id="selector-barberos">
+        <!-- Los barberos se cargarán aquí dinámicamente -->
+    </div>
+    <!-- El input hidden debe estar FUERA del contenedor -->
+    <input type="hidden" id="barberoId" name="barberoId" required>
+</div>
+
+<div class="campo">
+    <label for="hora">Turno:</label>
+    <div id="selector-horas">
+        <?php if (isset($_GET['fecha']) && !empty($_GET['fecha'])): ?>
+            <p class="mensaje-info">Cargando horarios disponibles...</p>
+        <?php else: ?>
+            <p class="mensaje-info">Selecciona una Fecha.</p>
+        <?php endif; ?>
+    </div>
+    <input type="hidden" id="hora" name="hora" required>
+</div>
 
 
 

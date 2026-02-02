@@ -2,3 +2,131 @@
 @use 'base/mixins' as m;
 
 
+
+
+/* Selector de barberos */
+.selector-barberos-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+    margin-top: 5px;
+    width: 100%;
+}
+
+.contenedor-barberos {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: calc(100% - 92px); /* Espacio para flechas */
+    scroll-behavior: smooth;
+    padding: 5px 0;
+    
+    /* Ocultar scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    
+    &::-webkit-scrollbar {
+        display: none;
+        height: 0;
+        width: 0;
+    }
+    
+    & > * {
+        flex-shrink: 0;
+    }
+}
+
+.barbero-option {
+    flex: 0 0 auto;
+    width: 120px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid v.$blanco;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: v.$negro;
+    color: v.$blanco;
+    padding: 10px;
+    text-align: center;
+}
+
+.barbero-option:hover {
+    border-color: v.$negro;
+    transform: translateY(-2px);
+}
+
+.barbero-option.seleccionado {
+    background-color: v.$blanco;
+    color: v.$negro;
+    border-color: v.$blanco;
+
+    .especialidad-barbero {
+    font-size: 12px;
+    color: v.$negro;
+    margin-bottom: 8px;
+}
+}
+
+.barbero-option.deshabilitado {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}
+
+.nombre-barbero {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.especialidad-barbero {
+    font-size: 12px;
+    color: v.$blanco;
+    margin-bottom: 8px;
+}
+
+.estado-barbero {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+.estado-disponible {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.estado-ocupado {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+/* Móviles */
+@include m.telefono {
+    .contenedor-barberos {
+        width: calc(100% - 84px); /* Flechas más pequeñas */
+        gap: 8px;
+    }
+    
+    .barbero-option {
+        width: 110px;
+        min-height: 90px;
+        padding: 8px;
+    }
+    
+    .nombre-barbero {
+        font-size: 13px;
+    }
+    
+    .especialidad-barbero {
+        font-size: 11px;
+    }
+}
+

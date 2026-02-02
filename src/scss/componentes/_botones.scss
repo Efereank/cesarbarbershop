@@ -11,7 +11,7 @@
 
 }
 .boton-confirmar{
-    @include m.boton(v.$verdeClaro, v.$blanco);
+    @include m.boton(v.$verdeClaro, v.$negro);
 
 
 }
