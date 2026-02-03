@@ -389,14 +389,31 @@ function seleccionarFecha() {
     const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-    // Obtener fecha actual SIN horas/minutos/segundos (para evitar problemas de zona horaria)
-    const hoy = new Date();
-    const hoyLocal = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    // Obtener fecha actual en hora Venezuela
+    const ahora = new Date();
+    const opciones = { timeZone: 'America/Caracas' };
+    const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
     
-    // Generar 5 días
-    for (let i = 0; i < 5; i++) {
-        const fecha = new Date(hoyLocal);
-        fecha.setDate(hoyLocal.getDate() + i);
+    // Obtener hora actual en Venezuela
+    const horaActualVenezuela = ahoraVenezuela.getHours();
+    const minutosActualVenezuela = ahoraVenezuela.getMinutes();
+    
+    // Definir la hora límite para agendar citas (20:00 = 8:00 PM)
+    const horaLimiteAgendar = 20; // 8:00 PM
+    
+    // Determinar si ya pasó la hora límite para agendar hoy
+    const yaPasoHoraLimite = horaActualVenezuela >= horaLimiteAgendar;
+    
+    // Calcular el día inicial (si ya pasó la hora límite, empezar desde mañana)
+    let diaInicial = 0;
+    if (yaPasoHoraLimite) {
+        diaInicial = 1; // Empezar desde mañana
+    }
+    
+    // Generar 5 días empezando desde el día calculado
+    for (let i = diaInicial; i < diaInicial + 5; i++) {
+        const fecha = new Date(ahoraVenezuela);
+        fecha.setDate(ahoraVenezuela.getDate() + i);
         
         const diaSemana = fecha.getDay();
         const diaNumero = fecha.getDate();
@@ -410,17 +427,14 @@ function seleccionarFecha() {
             diaOption.classList.add('deshabilitado');
         }
         
-        // Formatear fecha como YYYY-MM-DD para el valor - CORREGIDO
-        // Usar fecha local en lugar de UTC
+        // Formatear fecha como YYYY-MM-DD para el valor
         const year = fecha.getFullYear();
         const month = String(fecha.getMonth() + 1).padStart(2, '0');
         const day = String(fecha.getDate()).padStart(2, '0');
         const fechaFormato = `${year}-${month}-${day}`;
         
         diaOption.dataset.fecha = fechaFormato;
-        
-        // Para depuración (puedes quitarlo después)
-        diaOption.title = `Seleccionar: ${fechaFormato} (Mostrando: ${diaNumero})`;
+        diaOption.title = `Seleccionar: ${fechaFormato}`;
         
         // Contenido HTML
         diaOption.innerHTML = `
@@ -444,8 +458,6 @@ function seleccionarFecha() {
                             cargarHorariosDisponibles();
                         }
                     }
-                    
-                    console.log('Fecha deseleccionada:', this.dataset.fecha);
                 } else {
                     document.querySelectorAll('.dia-option.seleccionado').forEach(el => {
                         el.classList.remove('seleccionado');
@@ -460,11 +472,6 @@ function seleccionarFecha() {
                             cargarHorariosDisponibles();
                         }
                     }
-                    
-                    // Para depuración
-                    console.log('Fecha seleccionada:', this.dataset.fecha);
-                    console.log('Día mostrado en pantalla:', diaNumero);
-                    console.log('Fecha completa del objeto:', fecha.toString());
                 }
             });
         }
@@ -473,7 +480,16 @@ function seleccionarFecha() {
     }
     
     // Selección automática del primer día disponible
-    if (hoyLocal.getDay() !== 0) {
+    if (!yaPasoHoraLimite) {
+        // Si todavía no pasa la hora límite, seleccionar hoy si no es domingo
+        if (ahoraVenezuela.getDay() !== 0) {
+            const primerDia = contenedorFechas.querySelector('.dia-option:not(.deshabilitado)');
+            if (primerDia) {
+                primerDia.click();
+            }
+        }
+    } else {
+        // Si ya pasó la hora límite, seleccionar el primer día disponible (mañana o después)
         const primerDia = contenedorFechas.querySelector('.dia-option:not(.deshabilitado)');
         if (primerDia) {
             primerDia.click();
@@ -883,7 +899,7 @@ async function cargarHorariosDisponibles() {
     }
 
     if (!cita.barberoId) {
-        selectorHoras.innerHTML = '<p class="mensaje-info"> Ahora selecciona un Barbero. </p>';
+        selectorHoras.innerHTML = '<p class="mensaje-info"> Los horarios pueden variar según la disponibilidad del Barbero </p>';
         return;
     }
 
@@ -919,31 +935,13 @@ async function cargarHorariosDisponibles() {
         
         const mananaFiltrados = filtrarHorarios(horariosManana);
         const tardeFiltrados = filtrarHorarios(horariosTarde);
-
-        // Obtener fecha y hora actual en Venezuela (UTC-4)
-        const ahora = new Date();
-        const opciones = { timeZone: 'America/Caracas' };
-        const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
-        const fechaActualStr = ahoraVenezuela.toISOString().slice(0, 10); // YYYY-MM-DD
-
-        // Si la fecha seleccionada es hoy, filtrar horarios pasados
-        function horarioNoPasado(horario) {
-            if (cita.fecha !== fechaActualStr) return true;
-            const [h, m] = horario.split(':').map(Number);
-            const horaTurno = new Date(ahoraVenezuela.getFullYear(), ahoraVenezuela.getMonth(), ahoraVenezuela.getDate(), h, m);
-            // Mostrar solo horarios estrictamente después de la hora actual
-            return horaTurno.getTime() > ahoraVenezuela.getTime();
-        }
-
-        const mananaFiltradosFinal = mananaFiltrados.filter(horarioNoPasado);
-        const tardeFiltradosFinal = tardeFiltrados.filter(horarioNoPasado);
-
+        
         // Verificar disponibilidad para cada horario
         const verificarDisponibilidadPromesas = [
-            ...mananaFiltradosFinal.map(horario => verificarDisponibilidadIndividual(
+            ...mananaFiltrados.map(horario => verificarDisponibilidadIndividual(
                 cita.fecha, horario, duracion, cita.barberoId, false
             ).then(disponible => ({ horario, disponible, grupo: 'manana' }))),
-            ...tardeFiltradosFinal.map(horario => verificarDisponibilidadIndividual(
+            ...tardeFiltrados.map(horario => verificarDisponibilidadIndividual(
                 cita.fecha, horario, duracion, cita.barberoId, false
             ).then(disponible => ({ horario, disponible, grupo: 'tarde' })))
         ];
