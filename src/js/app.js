@@ -394,24 +394,8 @@ function seleccionarFecha() {
     const opciones = { timeZone: 'America/Caracas' };
     const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
     
-    // Obtener hora actual en Venezuela
-    const horaActualVenezuela = ahoraVenezuela.getHours();
-    const minutosActualVenezuela = ahoraVenezuela.getMinutes();
-    
-    // Definir la hora límite para agendar citas (20:00 = 8:00 PM)
-    const horaLimiteAgendar = 20; // 8:00 PM
-    
-    // Determinar si ya pasó la hora límite para agendar hoy
-    const yaPasoHoraLimite = horaActualVenezuela >= horaLimiteAgendar;
-    
-    // Calcular el día inicial (si ya pasó la hora límite, empezar desde mañana)
-    let diaInicial = 0;
-    if (yaPasoHoraLimite) {
-        diaInicial = 1; // Empezar desde mañana
-    }
-    
-    // Generar 5 días empezando desde el día calculado
-    for (let i = diaInicial; i < diaInicial + 5; i++) {
+    // Generar 5 días empezando desde hoy
+    for (let i = 0; i < 5; i++) {
         const fecha = new Date(ahoraVenezuela);
         fecha.setDate(ahoraVenezuela.getDate() + i);
         
@@ -479,17 +463,8 @@ function seleccionarFecha() {
         contenedorFechas.appendChild(diaOption);
     }
     
-    // Selección automática del primer día disponible
-    if (!yaPasoHoraLimite) {
-        // Si todavía no pasa la hora límite, seleccionar hoy si no es domingo
-        if (ahoraVenezuela.getDay() !== 0) {
-            const primerDia = contenedorFechas.querySelector('.dia-option:not(.deshabilitado)');
-            if (primerDia) {
-                primerDia.click();
-            }
-        }
-    } else {
-        // Si ya pasó la hora límite, seleccionar el primer día disponible (mañana o después)
+    // Selección automática del primer día disponible (si no es domingo)
+    if (ahoraVenezuela.getDay() !== 0) {
         const primerDia = contenedorFechas.querySelector('.dia-option:not(.deshabilitado)');
         if (primerDia) {
             primerDia.click();
@@ -541,117 +516,102 @@ function seleccionarHora() {
     actualizarDuracionServicio();
 }
 
-    async function validarHoraCita(e) {
-        const inputHora = document.querySelector('#hora');
-        const inputFecha = document.querySelector('#fecha'); 
-        const horaCita = inputHora.value; 
-        
-        if (!horaCita || !inputFecha.value) {
-            if (typeof cita !== 'undefined') cita.hora = ''; 
-            return;
-        }
-        
-        const [horaSeleccionadaStr, minutosSeleccionadosStr] = horaCita.split(":");
-        const hora = parseInt(horaSeleccionadaStr, 10); 
-        const minutos = parseInt(minutosSeleccionadosStr, 10);
+async function validarHoraCita(e) {
+    const inputHora = document.querySelector('#hora');
+    const inputFecha = document.querySelector('#fecha'); 
+    const horaCita = inputHora.value; 
+    
+    if (!horaCita || !inputFecha.value) {
+        if (typeof cita !== 'undefined') cita.hora = ''; 
+        return;
+    }
+    
+    const [horaSeleccionadaStr, minutosSeleccionadosStr] = horaCita.split(":");
+    const hora = parseInt(horaSeleccionadaStr, 10); 
+    const minutos = parseInt(minutosSeleccionadosStr, 10);
 
-        // HORA DE VENEZUELA (UTC-4)
-        const fechaActual = new Date();
-        
-        // Obtener fecha en hora de Venezuela
-        const opciones = { timeZone: 'America/Caracas' };
-        const fechaVenezuela = new Date(fechaActual.toLocaleString('en-US', opciones));
-        
-        const year = fechaVenezuela.getFullYear();
-        const month = String(fechaVenezuela.getMonth() + 1).padStart(2, '0');
-        const day = String(fechaVenezuela.getDate()).padStart(2, '0');
-        const fechaActualFormato = `${year}-${month}-${day}`;
-        
-        const fechaSeleccionada = inputFecha.value;
+    // HORA DE VENEZUELA (UTC-4)
+    const fechaActual = new Date();
+    const opciones = { timeZone: 'America/Caracas' };
+    const fechaVenezuela = new Date(fechaActual.toLocaleString('en-US', opciones));
+    
+    const year = fechaVenezuela.getFullYear();
+    const month = String(fechaVenezuela.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaVenezuela.getDate()).padStart(2, '0');
+    const fechaActualFormato = `${year}-${month}-${day}`;
+    
+    const fechaSeleccionada = inputFecha.value;
 
-        const limite15Minutos = new Date(fechaVenezuela.getTime() + (15 * 60 * 1000));
-        const horaLimite = limite15Minutos.getHours();
-        const minutosLimite = limite15Minutos.getMinutes();
+    let horaNoValida = false;
+    let mensajeError = '';
+
+    // Validación de horario de atención
+    if (hora < 10 || hora >= 20) {
+        horaNoValida = true;
+        mensajeError = 'Hora no válida. Nuestro horario de atención es de 10:00 a 20:00.';
+    }
+
+    const horaFinCalculada = calcularHoraFin(horaCita, duracionServicio);
+    const [horaFin, minutosFin] = horaFinCalculada.split(':').map(Number);
+    if (horaFin > 20 || (horaFin === 20 && minutosFin > 0)) {
+        horaNoValida = true;
+        mensajeError = `El servicio seleccionado terminaría a las ${horaFinCalculada} fuera del horario de atención (hasta 20:00).`;
+    }
+
+    // Validación para citas hoy: solo verificar que no sea en el pasado (sin margen de 5 minutos)
+    if (fechaSeleccionada === fechaActualFormato && !horaNoValida) {
+        const horaActual = fechaVenezuela.getHours();
+        const minutosActual = fechaVenezuela.getMinutes();
         
-
-        let horaNoValida = false;
-        let mensajeError = '';
-
-        // Validación de horario de atención
-        if (hora < 10 || hora >= 20) {
+        if (hora < horaActual) {
             horaNoValida = true;
-            mensajeError = 'Hora no válida. Nuestro horario de atención es de 10:00 a 20:00.';
-        }
-
-
-        const horaFinCalculada = calcularHoraFin(horaCita, duracionServicio);
-        const [horaFin, minutosFin] = horaFinCalculada.split(':').map(Number);
-        if (horaFin > 20 || (horaFin === 20 && minutosFin > 0)) {
+            mensajeError = 'Hora no válida. No puedes agendar citas en horas pasadas.';
+        } else if (hora === horaActual && minutos < minutosActual) {
             horaNoValida = true;
-            mensajeError = `El servicio seleccionado terminaría a las ${horaFinCalculada} fuera del horario de atención (hasta 20:00).`;
-        }
-
-
-        if (fechaSeleccionada === fechaActualFormato && !horaNoValida) {
-            let fueraDeMargen = false;
-        
-            if (hora < horaLimite) {
-                fueraDeMargen = true;
-            } 
-            
-            if (hora === horaLimite) {
-                if (minutos < minutosLimite) {
-                    fueraDeMargen = true;
-                }
-            }
-            
-            if (fueraDeMargen) {
-                horaNoValida = true;
-                mensajeError = 'Hora no válida. Las citas para hoy requieren un margen de 5 minutos.';
-            }
-        }
-        
-        const alertaExistente = document.querySelector('.alerta');
-
-        if (horaNoValida) {
-            inputHora.value = ''; 
-            if (!alertaExistente || alertaExistente.textContent !== mensajeError) {
-                if (alertaExistente) alertaExistente.remove();
-                mostrarAlerta(mensajeError, 'error', '.formulario');
-            }
-            if (typeof cita !== 'undefined') cita.hora = '';
-        } else {
-            const horaFin = calcularHoraFin(horaCita, duracionServicio);
-            
-            try {
-                const resultado = await verificarDisponibilidad(fechaSeleccionada, horaCita, horaFin, duracionServicio);
-                
-                if (!resultado.disponible) {
-                    inputHora.value = '';
-                    mostrarAlerta(resultado.mensaje || 'Ya existe una cita en ese horario. Por favor, elige otra hora.', 'error', '.formulario');
-                    if (typeof cita !== 'undefined') cita.hora = '';
-                } else {
-
-                    if (typeof cita !== 'undefined') {
-                        cita.hora = horaCita;
-                        cita.hora_fin = horaFin; 
-                    }
-
-                    if (alertaExistente) {
-                        alertaExistente.remove();
-                    }
-                    
-                    mostrarAlerta(`Horario disponible ✓`, 'exito', '.formulario');
-                    setTimeout(() => {
-                        const alertaExito = document.querySelector('.alerta.exito');
-                        if (alertaExito) alertaExito.remove();
-                    }, 3000);
-                }
-            } catch (error) {
-                mostrarAlerta('Error al verificar disponibilidad. Confirma que el horario esté libre.', 'error', '.formulario');
-            }
+            mensajeError = 'Hora no válida. No puedes agendar citas en horas pasadas.';
         }
     }
+    
+    const alertaExistente = document.querySelector('.alerta');
+
+    if (horaNoValida) {
+        inputHora.value = ''; 
+        if (!alertaExistente || alertaExistente.textContent !== mensajeError) {
+            if (alertaExistente) alertaExistente.remove();
+            mostrarAlerta(mensajeError, 'error', '.formulario');
+        }
+        if (typeof cita !== 'undefined') cita.hora = '';
+    } else {
+        const horaFin = calcularHoraFin(horaCita, duracionServicio);
+        
+        try {
+            const resultado = await verificarDisponibilidad(fechaSeleccionada, horaCita, horaFin, duracionServicio);
+            
+            if (!resultado.disponible) {
+                inputHora.value = '';
+                mostrarAlerta(resultado.mensaje || 'Ya existe una cita en ese horario. Por favor, elige otra hora.', 'error', '.formulario');
+                if (typeof cita !== 'undefined') cita.hora = '';
+            } else {
+                if (typeof cita !== 'undefined') {
+                    cita.hora = horaCita;
+                    cita.hora_fin = horaFin; 
+                }
+
+                if (alertaExistente) {
+                    alertaExistente.remove();
+                }
+                
+                mostrarAlerta(`Horario disponible ✓`, 'exito', '.formulario');
+                setTimeout(() => {
+                    const alertaExito = document.querySelector('.alerta.exito');
+                    if (alertaExito) alertaExito.remove();
+                }, 3000);
+            }
+        } catch (error) {
+            mostrarAlerta('Error al verificar disponibilidad. Confirma que el horario esté libre.', 'error', '.formulario');
+        }
+    }
+}
 
 
     function obtenerDuracionServicio() {
@@ -909,7 +869,22 @@ async function cargarHorariosDisponibles() {
     try {
         const duracion = calcularDuracionTotal();
         
-        // Generar horarios de 10:00 a 19:30 cada 30 minutos (como en la imagen)
+        // Obtener fecha y hora actual en Venezuela (UTC-4)
+        const ahora = new Date();
+        const opciones = { timeZone: 'America/Caracas' };
+        const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
+        
+        // Formatear fecha actual para comparación
+        const yearActual = ahoraVenezuela.getFullYear();
+        const monthActual = String(ahoraVenezuela.getMonth() + 1).padStart(2, '0');
+        const dayActual = String(ahoraVenezuela.getDate()).padStart(2, '0');
+        const fechaActualFormato = `${yearActual}-${monthActual}-${dayActual}`;
+        
+        // Hora actual en Venezuela (horas y minutos)
+        const horaActual = ahoraVenezuela.getHours();
+        const minutosActual = ahoraVenezuela.getMinutes();
+        
+        // Generar horarios de 10:00 a 19:30 cada 30 minutos
         const horariosManana = [
             '10:00', '10:30', '11:00', '11:30'
         ];
@@ -923,13 +898,25 @@ async function cargarHorariosDisponibles() {
         // Filtrar horarios que no excedan el cierre considerando la duración
         const horarioCierre = 20; // 20:00
         
+        // En la función filtrarHorarios dentro de cargarHorariosDisponibles()
         const filtrarHorarios = (horarios) => {
             return horarios.filter(horario => {
                 const [hora, minutos] = horario.split(':').map(Number);
                 const horaFin = new Date();
                 horaFin.setHours(hora, minutos + duracion, 0, 0);
-                return horaFin.getHours() < horarioCierre || 
-                      (horaFin.getHours() === horarioCierre && horaFin.getMinutes() === 0);
+                
+                // Verificar que no exceda el horario de cierre
+                const excedeCierre = horaFin.getHours() > horarioCierre || 
+                                    (horaFin.getHours() === horarioCierre && horaFin.getMinutes() > 0);
+                
+                // Si la fecha seleccionada es hoy, verificar que el horario no haya pasado
+                if (cita.fecha === fechaActualFormato) {
+                    const horaYaPaso = hora < horaActual || 
+                                    (hora === horaActual && minutos < minutosActual);
+                    return !excedeCierre && !horaYaPaso;
+                }
+                
+                return !excedeCierre;
             });
         };
         
@@ -1106,48 +1093,42 @@ async function verificarDisponibilidadIndividual(fecha, hora, duracion, barberoI
     }
 
 
-    function validarHoraContraActual(fechaSeleccionada, horaSeleccionada) {
-        // Obtener fecha y hora actual en Venezuela (UTC-4)
-        const ahora = new Date();
-        const opciones = { timeZone: 'America/Caracas' };
-        const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
-        
-
-        const [anio, mes, dia] = fechaSeleccionada.split('-');
-        const [hora, minutos] = horaSeleccionada.split(':');
-        
-        const fechaCita = new Date(anio, mes - 1, dia, hora, minutos);
-        
-        // Si la cita es para hoy, verificar que no sea en el pasado
-        const hoy = new Date(ahoraVenezuela.getFullYear(), ahoraVenezuela.getMonth(), ahoraVenezuela.getDate());
-        const fechaCitaSinHora = new Date(fechaCita.getFullYear(), fechaCita.getMonth(), fechaCita.getDate());
-        
-        if (fechaCitaSinHora.getTime() === hoy.getTime()) {
-            const margenMinutos = 5; // Margen de 5 minutos
-            
-            const horaLimite = new Date(ahoraVenezuela.getTime() + (margenMinutos * 60 * 1000));
-            
-            if (fechaCita < horaLimite) {
-                const horaActualStr = ahoraVenezuela.toTimeString().substring(0, 5);
-                const horaLimiteStr = horaLimite.toTimeString().substring(0, 5);
-                
-                return {
-                    valido: false,
-                    mensaje: `No puedes agendar citas para hoy antes de las ${horaLimiteStr}. La hora actual es ${horaActualStr}. Se requiere un margen de ${margenMinutos} minutos.`
-                };
-            }
-        }
-        
-        // Si la cita es para una fecha anterior a hoy
-        if (fechaCitaSinHora < hoy) {
+function validarHoraContraActual(fechaSeleccionada, horaSeleccionada) {
+    // Obtener fecha y hora actual en Venezuela (UTC-4)
+    const ahora = new Date();
+    const opciones = { timeZone: 'America/Caracas' };
+    const ahoraVenezuela = new Date(ahora.toLocaleString('en-US', opciones));
+    
+    const [anio, mes, dia] = fechaSeleccionada.split('-');
+    const [hora, minutos] = horaSeleccionada.split(':');
+    
+    const fechaCita = new Date(anio, mes - 1, dia, hora, minutos);
+    
+    // Si la cita es para hoy, verificar que no sea en el pasado (sin margen)
+    const hoy = new Date(ahoraVenezuela.getFullYear(), ahoraVenezuela.getMonth(), ahoraVenezuela.getDate());
+    const fechaCitaSinHora = new Date(fechaCita.getFullYear(), fechaCita.getMonth(), fechaCita.getDate());
+    
+    if (fechaCitaSinHora.getTime() === hoy.getTime()) {
+        // Solo verificar si la hora es pasada, sin margen adicional
+        if (fechaCita < ahoraVenezuela) {
+            const horaActualStr = ahoraVenezuela.toTimeString().substring(0, 5);
             return {
                 valido: false,
-                mensaje: 'No puedes agendar citas para fechas pasadas.'
+                mensaje: `No puedes agendar citas en horas pasadas. La hora actual es ${horaActualStr}.`
             };
         }
-        
-        return { valido: true };
     }
+    
+    // Si la cita es para una fecha anterior a hoy
+    if (fechaCitaSinHora < hoy) {
+        return {
+            valido: false,
+            mensaje: 'No puedes agendar citas para fechas pasadas.'
+        };
+    }
+    
+    return { valido: true };
+}
 
 
 
